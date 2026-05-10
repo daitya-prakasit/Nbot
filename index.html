@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Andar Bahar Game</title>
+    <!-- Telegram Web App Script -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--tg-theme-bg-color, #1a1a2e);
+            color: var(--tg-theme-text-color, #ffffff);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 15px;
+            transition: all 0.3s;
+        }
+
+        .game-container {
+            background: var(--tg-theme-secondary-bg-color, rgba(255, 255, 255, 0.08));
+            border-radius: 20px;
+            padding: 25px 20px;
+            width: 100%;
+            max-width: 420px;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 2em;
+            margin-bottom: 5px;
+            background: linear-gradient(45deg, #ffd700, #ffaa00);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            color: var(--tg-theme-hint-color, #aaa);
+            margin-bottom: 20px;
+            font-size: 0.85em;
+        }
+
+        .joker-section {
+            background: rgba(255, 215, 0, 0.08);
+            border: 2px solid #ffd700;
+            border-radius: 15px;
+            padding: 18px;
+            margin-bottom: 20px;
+        }
+
+        .joker-label {
+            font-size: 0.9em;
+            color: #ffd700;
+            margin-bottom: 8px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .joker-card {
+            font-size: 3.5em;
+            animation: float 2s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-8px);
+            }
+        }
+
+        .joker-value {
+            color: #ffd700;
+            margin-top: 5px;
+            font-size: 1.1em;
+            font-weight: bold;
+        }
+
+        .piles-container {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .pile {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            padding: 12px;
+            min-height: 100px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.4s;
+        }
+
+        .pile.winner {
+            border-color: #4caf50;
+            box-shadow: 0 0 25px rgba(76, 175, 80, 0.5);
+        }
+
+        .pile.loser {
+            opacity: 0.5;
+        }
+
+        .pile-title {
+            font-weight: bold;
+            font-size: 1.1em;
+            margin-bottom: 8px;
+        }
+
+        .pile-andar .pile-title {
+            color: #ff6b6b;
+        }
+        .pile-bahar .pile-title {
+            color: #6bb5ff;
+        }
+
+        .pile-cards {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            justify-content: center;
+            min-height: 35px;
+            align-items: center;
+        }
+
+        .mini-card {
+            background: #fff;
+            color: #000;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 0.8em;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .mini-card.match {
+            background: #4caf50;
+            color: #fff;
+            animation: pop 0.5s ease-out;
+            font-size: 1em;
+            padding: 6px 12px;
+        }
+
+        @keyframes pop {
+            0% {
+                transform: scale(0.3);
+            }
+            60% {
+                transform: scale(1.3);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        .btn {
+            padding: 14px 30px;
+            font-size: 1.1em;
+            font-weight: bold;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            letter-spacing: 1px;
+            color: #fff;
+            width: 100%;
+            margin: 5px 0;
+        }
+
+        .btn:active {
+            transform: scale(0.95);
+        }
+
+        .btn-andar {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+        }
+        .btn-bahar {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+        }
+        .btn-reset {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            color: #fff;
+            margin-top: 10px;
+        }
+
+        .result {
+            font-size: 1.3em;
+            font-weight: bold;
+            margin: 15px 0;
+            padding: 12px;
+            border-radius: 10px;
+        }
+
+        .result.win {
+            background: rgba(76, 175, 80, 0.2);
+            color: #4caf50;
+            border: 1px solid #4caf50;
+        }
+
+        .result.lose {
+            background: rgba(244, 67, 54, 0.2);
+            color: #f44336;
+            border: 1px solid #f44336;
+        }
+
+        .result.draw {
+            background: rgba(255, 152, 0, 0.2);
+            color: #ff9800;
+            border: 1px solid #ff9800;
+        }
+
+        .score-board {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 15px;
+            font-size: 0.9em;
+            color: #ddd;
+        }
+
+        .score {
+            font-weight: bold;
+            color: #ffd700;
+            font-size: 1.2em;
+        }
+
+        .turn-indicator {
+            font-size: 0.9em;
+            color: var(--tg-theme-hint-color, #aaa);
+            margin-bottom: 5px;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>🎮 Andar Bahar</h1>
+        <p class="subtitle">Joker card ke saath matching card dhundho!</p>
+
+        <!-- Score Board -->
+        <div class="score-board">
+            <div>🏆 Wins: <span class="score" id="wins">0</span></div>
+            <div>😞 Loss: <span class="score" id="losses">0</span></div>
+            <div>🎯 Total: <span class="score" id="total">0</span></div>
+        </div>
+
+        <!-- Joker Display -->
+        <div class="joker-section">
+            <div class="joker-label">🃏 JOKER CARD</div>
+            <div class="joker-card" id="jokerEmoji">🂠</div>
+            <div class="joker-value" id="jokerText"></div>
+        </div>
+
+        <!-- Piles -->
+        <div class="piles-container">
+            <div class="pile pile-andar" id="andarPile">
+                <div class="pile-title">🔴 ANDAR</div>
+                <div class="pile-cards" id="andarCards"></div>
+            </div>
+            <div class="pile pile-bahar" id="baharPile">
+                <div class="pile-title">🔵 BAHAR</div>
+                <div class="pile-cards" id="baharCards"></div>
+            </div>
+        </div>
+
+        <!-- Bet Buttons -->
+        <div id="betSection">
+            <p style="margin-bottom:12px;font-size:1em;">💰 Kis side bet lagana hai?</p>
+            <div style="display:flex;gap:10px;">
+                <button class="btn btn-andar" onclick="placeBet('Andar')">🔴 ANDAR</button>
+                <button class="btn btn-bahar" onclick="placeBet('Bahar')">🔵 BAHAR</button>
+            </div>
+        </div>
+
+        <!-- Status -->
+        <div class="turn-indicator" id="status"></div>
+
+        <!-- Result -->
+        <div id="resultDisplay"></div>
+
+        <!-- Reset -->
+        <button class="btn btn-reset hidden" id="resetBtn" onclick="resetGame()">🔄 Naya Game Khelo</button>
+    </div>
+
+    <script>
+        // ==================== TELEGRAM WEB APP INIT ====================
+        const tg = window.Telegram.WebApp;
+        tg.expand(); // Full screen
+        tg.ready();
+
+        // Telegram theme colors
+        document.documentElement.style.setProperty('--tg-theme-bg-color', tg.backgroundColor || '#1a1a2e');
+        document.documentElement.style.setProperty('--tg-theme-text-color', tg.textColor || '#ffffff');
+        document.documentElement.style.setProperty('--tg-theme-hint-color', tg.hintColor || '#aaaaaa');
+        document.documentElement.style.setProperty('--tg-theme-secondary-bg-color', tg.secondaryBackgroundColor || 'rgba(255,255,255,0.08)');
+
+        // ==================== GAME LOGIC ====================
+        const SUITS = ['♥️', '♦️', '♣️', '♠️'];
+        const CARD_NAMES = { 1: 'A', 11: 'J', 12: 'Q', 13: 'K' };
+
+        function getCardName(value) {
+            return CARD_NAMES[value] || value.toString();
+        }
+
+        function getCardDisplay(value, suit) {
+            return `${getCardName(value)}${suit}`;
+        }
+
+        // State
+        let deck = [];
+        let jokerCard = null;
+        let andarPile = [];
+        let baharPile = [];
+        let gameOver = true;
+        let winner = null;
+        let playerBet = null;
+        let wins = 0;
+        let losses = 0;
+        let total = 0;
+
+        function createDeck() {
+            deck = [];
+            for (let value = 1; value <= 13; value++) {
+                for (let suit of SUITS) {
+                    deck.push({ value, suit });
+                }
+            }
+            // Fisher-Yates shuffle
+            for (let i = deck.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [deck[i], deck[j]] = [deck[j], deck[i]];
+            }
+        }
+
+        function drawJoker() {
+            jokerCard = deck.pop();
+            document.getElementById('jokerEmoji').textContent = getCardName(jokerCard.value);
+            document.getElementById('jokerText').textContent = `${getCardName(jokerCard.value)} ${jokerCard.suit}`;
+        }
+
+        function clearUI() {
+            document.getElementById('andarCards').innerHTML = '';
+            document.getElementById('baharCards').innerHTML = '';
+            document.getElementById('andarPile').classList.remove('winner', 'loser');
+            document.getElementById('baharPile').classList.remove('winner', 'loser');
+            document.getElementById('resultDisplay').innerHTML = '';
+            document.getElementById('status').textContent = '';
+        }
+
+        function resetGame() {
+            createDeck();
+            andarPile = [];
+            baharPile = [];
+            gameOver = false;
+            winner = null;
+            playerBet = null;
+            clearUI();
+            drawJoker();
+            document.getElementById('betSection').classList.remove('hidden');
+            document.getElementById('resetBtn').classList.add('hidden');
+            document.getElementById('status').textContent = '';
+        }
+
+        function addCardToPile(pileName, card, isMatch = false) {
+            const pileArray = pileName === 'Andar' ? andarPile : baharPile;
+            pileArray.push(card);
+
+            const containerId = pileName === 'Andar' ? 'andarCards' : 'baharCards';
+            const container = document.getElementById(containerId);
+
+            const cardEl = document.createElement('span');
+            cardEl.className = 'mini-card' + (isMatch ? ' match' : '');
+            cardEl.textContent = getCardDisplay(card.value, card.suit);
+            container.appendChild(cardEl);
+
+            // Scroll to show new card
+            cardEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        function dealCard(turn) {
+            if (deck.length === 0) return false;
+
+            const card = deck.pop();
+            const isMatch = (card.value === jokerCard.value);
+            addCardToPile(turn, card, isMatch);
+
+            if (isMatch) {
+                winner = turn;
+                gameOver = true;
+                return true;
+            }
+            return false;
+        }
+
+        function endGame() {
+            // Highlight
+            document.getElementById('andarPile').classList.remove('winner', 'loser');
+            document.getElementById('baharPile').classList.remove('winner', 'loser');
+
+            if (winner === 'Andar') {
+                document.getElementById('andarPile').classList.add('winner');
+                document.getElementById('baharPile').classList.add('loser');
+            } else if (winner === 'Bahar') {
+                document.getElementById('baharPile').classList.add('winner');
+                document.getElementById('andarPile').classList.add('loser');
+            }
+
+            document.getElementById('betSection').classList.add('hidden');
+            document.getElementById('resetBtn').classList.remove('hidden');
+
+            // Result
+            total++;
+            const resultDiv = document.getElementById('resultDisplay');
+            if (winner === playerBet) {
+                wins++;
+                resultDiv.innerHTML = '<div class="result win">🎉 BADHAI HO! AAP JEET GAYE! 🎊</div>';
+                // Haptic feedback
+                if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+            } else {
+                losses++;
+                resultDiv.innerHTML = '<div class="result lose">😞 AFSOS! AAP HAAR GAYE.</div>';
+                if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('error');
+            }
+
+            // Update score
+            document.getElementById('wins').textContent = wins;
+            document.getElementById('losses').textContent = losses;
+            document.getElementById('total').textContent = total;
+
+            // Send score to Telegram
+            tg.sendData(JSON.stringify({
+                wins: wins,
+                losses: losses,
+                total: total,
+                lastResult: winner === playerBet ? 'win' : 'lose'
+            }));
+        }
+
+        function placeBet(bet) {
+            if (gameOver) return;
+
+            playerBet = bet;
+            document.getElementById('betSection').classList.add('hidden');
+            document.getElementById('status').textContent = `🟢 Aapne "${bet}" choose kiya! Dealing...`;
+
+            if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
+
+            // Start dealing - Andar first
+            dealCards();
+        }
+
+        function dealCards() {
+            let turn = 'Andar';
+            const dealInterval = setInterval(() => {
+                if (gameOver) {
+                    clearInterval(dealInterval);
+                    return;
+                }
+
+                const matched = dealCard(turn);
+                if (matched) {
+                    endGame();
+                    clearInterval(dealInterval);
+                    return;
+                }
+
+                turn = (turn === 'Andar') ? 'Bahar' : 'Andar';
+            }, 350);
+        }
+
+        // Initialize
+        resetGame();
+
+        // Back button handler
+        tg.BackButton.onClick(() => {
+            tg.close();
+        });
+        tg.BackButton.show();
+    </script>
+</body>
+</html>
