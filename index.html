@@ -4,8 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Andar Bahar Game</title>
-    <!-- Telegram Web App Script -->
+
+    <!-- Telegram Web App -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
     <style>
         * {
             margin: 0;
@@ -25,7 +32,7 @@
             transition: all 0.3s;
         }
 
-        .game-container {
+        .container {
             background: var(--tg-theme-secondary-bg-color, rgba(255, 255, 255, 0.08));
             border-radius: 20px;
             padding: 25px 20px;
@@ -52,6 +59,125 @@
             font-size: 0.85em;
         }
 
+        /* ============ LOGIN STYLES ============ */
+        .login-box {
+            padding: 10px 0;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+            text-align: left;
+        }
+
+        .input-group label {
+            display: block;
+            font-size: 0.9em;
+            margin-bottom: 5px;
+            color: #ddd;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border-radius: 10px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+            font-size: 1em;
+            outline: none;
+            transition: border 0.3s;
+        }
+
+        .input-group input:focus {
+            border-color: #ffd700;
+        }
+
+        .btn {
+            padding: 14px 30px;
+            font-size: 1.1em;
+            font-weight: bold;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            letter-spacing: 1px;
+            color: #fff;
+            width: 100%;
+            margin: 5px 0;
+        }
+
+        .btn:active {
+            transform: scale(0.95);
+        }
+
+        .btn-gold {
+            background: linear-gradient(135deg, #ffd700, #ffaa00);
+            color: #000;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            color: #fff;
+        }
+
+        .btn-andar {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+        }
+
+        .btn-bahar {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+        }
+
+        .btn-reset {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            color: #fff;
+            margin-top: 10px;
+        }
+
+        .btn-logout {
+            background: rgba(244, 67, 54, 0.2);
+            border: 1px solid #f44336;
+            color: #f44336;
+            font-size: 0.9em;
+            padding: 10px;
+            margin-top: 15px;
+        }
+
+        .link-text {
+            color: #ffd700;
+            cursor: pointer;
+            text-decoration: underline;
+            font-size: 0.9em;
+        }
+
+        .error-msg {
+            color: #f44336;
+            font-size: 0.85em;
+            margin-top: 5px;
+            display: none;
+        }
+
+        /* ============ GAME STYLES ============ */
+        .hidden {
+            display: none !important;
+        }
+
+        .user-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            font-size: 0.85em;
+            color: #ddd;
+        }
+
+        .user-email {
+            color: #ffd700;
+            font-weight: bold;
+        }
+
         .joker-section {
             background: rgba(255, 215, 0, 0.08);
             border: 2px solid #ffd700;
@@ -74,12 +200,8 @@
         }
 
         @keyframes float {
-            0%, 100% {
-                transform: translateY(0);
-            }
-            50% {
-                transform: translateY(-8px);
-            }
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
         }
 
         .joker-value {
@@ -110,9 +232,7 @@
             box-shadow: 0 0 25px rgba(76, 175, 80, 0.5);
         }
 
-        .pile.loser {
-            opacity: 0.5;
-        }
+        .pile.loser { opacity: 0.5; }
 
         .pile-title {
             font-weight: bold;
@@ -120,12 +240,8 @@
             margin-bottom: 8px;
         }
 
-        .pile-andar .pile-title {
-            color: #ff6b6b;
-        }
-        .pile-bahar .pile-title {
-            color: #6bb5ff;
-        }
+        .pile-andar .pile-title { color: #ff6b6b; }
+        .pile-bahar .pile-title { color: #6bb5ff; }
 
         .pile-cards {
             display: flex;
@@ -155,46 +271,9 @@
         }
 
         @keyframes pop {
-            0% {
-                transform: scale(0.3);
-            }
-            60% {
-                transform: scale(1.3);
-            }
-            100% {
-                transform: scale(1);
-            }
-        }
-
-        .btn {
-            padding: 14px 30px;
-            font-size: 1.1em;
-            font-weight: bold;
-            border: none;
-            border-radius: 50px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            letter-spacing: 1px;
-            color: #fff;
-            width: 100%;
-            margin: 5px 0;
-        }
-
-        .btn:active {
-            transform: scale(0.95);
-        }
-
-        .btn-andar {
-            background: linear-gradient(135deg, #e74c3c, #c0392b);
-        }
-        .btn-bahar {
-            background: linear-gradient(135deg, #3498db, #2980b9);
-        }
-        .btn-reset {
-            background: rgba(255, 255, 255, 0.1);
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            color: #fff;
-            margin-top: 10px;
+            0% { transform: scale(0.3); }
+            60% { transform: scale(1.3); }
+            100% { transform: scale(1); }
         }
 
         .result {
@@ -217,12 +296,6 @@
             border: 1px solid #f44336;
         }
 
-        .result.draw {
-            background: rgba(255, 152, 0, 0.2);
-            color: #ff9800;
-            border: 1px solid #ff9800;
-        }
-
         .score-board {
             display: flex;
             justify-content: space-around;
@@ -242,16 +315,59 @@
             color: var(--tg-theme-hint-color, #aaa);
             margin-bottom: 5px;
         }
-
-        .hidden {
-            display: none;
-        }
     </style>
 </head>
 <body>
-    <div class="game-container">
+
+    <!-- ==================== LOGIN SCREEN ==================== -->
+    <div class="container" id="loginScreen">
         <h1>🎮 Andar Bahar</h1>
-        <p class="subtitle">Joker card ke saath matching card dhundho!</p>
+        <p class="subtitle">Login karein aur khelein!</p>
+
+        <div class="login-box">
+            <!-- Login Form -->
+            <div id="loginForm">
+                <div class="input-group">
+                    <label>📧 Email</label>
+                    <input type="email" id="loginEmail" placeholder="email@example.com">
+                </div>
+                <div class="input-group">
+                    <label>🔒 Password</label>
+                    <input type="password" id="loginPassword" placeholder="••••••••">
+                </div>
+                <p class="error-msg" id="loginError">❌ Invalid email or password</p>
+                <button class="btn btn-gold" onclick="login()">🔐 LOGIN</button>
+                <p style="margin-top:10px;">
+                    <span class="link-text" onclick="toggleForm('signup')">New user? Sign Up</span>
+                </p>
+            </div>
+
+            <!-- Signup Form -->
+            <div id="signupForm" class="hidden">
+                <div class="input-group">
+                    <label>📧 Email</label>
+                    <input type="email" id="signupEmail" placeholder="email@example.com">
+                </div>
+                <div class="input-group">
+                    <label>🔒 Password (min 6 chars)</label>
+                    <input type="password" id="signupPassword" placeholder="••••••••">
+                </div>
+                <p class="error-msg" id="signupError">❌ Signup failed</p>
+                <button class="btn btn-gold" onclick="signup()">✨ SIGN UP</button>
+                <p style="margin-top:10px;">
+                    <span class="link-text" onclick="toggleForm('login')">Already have account? Login</span>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== GAME SCREEN ==================== -->
+    <div class="container hidden" id="gameScreen">
+        <h1>🎮 Andar Bahar</h1>
+        <div class="user-bar">
+            <span>👤 <span class="user-email" id="displayEmail"></span></span>
+            <button class="btn btn-logout" onclick="logout()" style="width:auto;margin:0;padding:8px 15px;">🚪 Logout</button>
+        </div>
 
         <!-- Score Board -->
         <div class="score-board">
@@ -288,41 +404,182 @@
             </div>
         </div>
 
-        <!-- Status -->
         <div class="turn-indicator" id="status"></div>
-
-        <!-- Result -->
         <div id="resultDisplay"></div>
-
-        <!-- Reset -->
         <button class="btn btn-reset hidden" id="resetBtn" onclick="resetGame()">🔄 Naya Game Khelo</button>
     </div>
 
+    <!-- ==================== SCRIPTS ==================== -->
     <script>
-        // ==================== TELEGRAM WEB APP INIT ====================
+        // ==================== FIREBASE INIT ====================
+        const firebaseConfig = {
+            apiKey: "AIzaSyAQ4sLC47HVflDVQgyAC2gWnUo87wlQitQ",
+            authDomain: "mogbf-525cb.firebaseapp.com",
+            projectId: "mogbf-525cb",
+            storageBucket: "mogbf-525cb.firebasestorage.app",
+            messagingSenderId: "451875719799",
+            appId: "1:451875719799:web:3980050067ddc5388ed472"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        // ==================== TELEGRAM INIT ====================
         const tg = window.Telegram.WebApp;
-        tg.expand(); // Full screen
+        tg.expand();
         tg.ready();
 
-        // Telegram theme colors
         document.documentElement.style.setProperty('--tg-theme-bg-color', tg.backgroundColor || '#1a1a2e');
         document.documentElement.style.setProperty('--tg-theme-text-color', tg.textColor || '#ffffff');
         document.documentElement.style.setProperty('--tg-theme-hint-color', tg.hintColor || '#aaaaaa');
         document.documentElement.style.setProperty('--tg-theme-secondary-bg-color', tg.secondaryBackgroundColor || 'rgba(255,255,255,0.08)');
 
+        // ==================== AUTH ====================
+
+        // Toggle between login/signup forms
+        function toggleForm(form) {
+            document.getElementById('loginForm').classList.add('hidden');
+            document.getElementById('signupForm').classList.add('hidden');
+            document.getElementById('loginError').style.display = 'none';
+            document.getElementById('signupError').style.display = 'none';
+
+            if (form === 'login') {
+                document.getElementById('loginForm').classList.remove('hidden');
+            } else {
+                document.getElementById('signupForm').classList.remove('hidden');
+            }
+        }
+
+        // Login
+        function login() {
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value;
+
+            if (!email || !password) {
+                showError('loginError', 'Please fill all fields');
+                return;
+            }
+
+            document.getElementById('loginError').style.display = 'none';
+
+            auth.signInWithEmailAndPassword(email, password)
+                .then((userCredential) => {
+                    // Success - handled by onAuthStateChanged
+                })
+                .catch((error) => {
+                    let msg = 'Login failed!';
+                    if (error.code === 'auth/user-not-found') msg = 'User not found!';
+                    if (error.code === 'auth/wrong-password') msg = 'Wrong password!';
+                    if (error.code === 'auth/invalid-email') msg = 'Invalid email!';
+                    showError('loginError', msg);
+                });
+        }
+
+        // Signup
+        function signup() {
+            const email = document.getElementById('signupEmail').value.trim();
+            const password = document.getElementById('signupPassword').value;
+
+            if (!email || !password) {
+                showError('signupError', 'Please fill all fields');
+                return;
+            }
+
+            if (password.length < 6) {
+                showError('signupError', 'Password must be at least 6 characters');
+                return;
+            }
+
+            document.getElementById('signupError').style.display = 'none';
+
+            auth.createUserWithEmailAndPassword(email, password)
+                .then((userCredential) => {
+                    // Save user to Firestore
+                    const user = userCredential.user;
+                    return db.collection('users').doc(user.uid).set({
+                        email: user.email,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                        wins: 0,
+                        losses: 0,
+                        total: 0
+                    });
+                })
+                .catch((error) => {
+                    let msg = 'Signup failed!';
+                    if (error.code === 'auth/email-already-in-use') msg = 'Email already registered!';
+                    if (error.code === 'auth/weak-password') msg = 'Password too weak!';
+                    showError('signupError', msg);
+                });
+        }
+
+        // Logout
+        function logout() {
+            auth.signOut();
+        }
+
+        function showError(elementId, message) {
+            const el = document.getElementById(elementId);
+            el.textContent = '❌ ' + message;
+            el.style.display = 'block';
+            setTimeout(() => { el.style.display = 'none'; }, 4000);
+        }
+
+        // Auth state listener
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                // Logged in
+                document.getElementById('loginScreen').classList.add('hidden');
+                document.getElementById('gameScreen').classList.remove('hidden');
+                document.getElementById('displayEmail').textContent = user.email;
+                loadUserStats(user.uid);
+                resetGame();
+            } else {
+                // Logged out
+                document.getElementById('loginScreen').classList.remove('hidden');
+                document.getElementById('gameScreen').classList.add('hidden');
+                document.getElementById('loginEmail').value = '';
+                document.getElementById('loginPassword').value = '';
+                document.getElementById('signupEmail').value = '';
+                document.getElementById('signupPassword').value = '';
+            }
+        });
+
+        // Load stats from Firestore
+        async function loadUserStats(uid) {
+            try {
+                const doc = await db.collection('users').doc(uid).get();
+                if (doc.exists) {
+                    const data = doc.data();
+                    document.getElementById('wins').textContent = data.wins || 0;
+                    document.getElementById('losses').textContent = data.losses || 0;
+                    document.getElementById('total').textContent = data.total || 0;
+                }
+            } catch (e) {
+                console.log('Error loading stats:', e);
+            }
+        }
+
+        // Save stats to Firestore
+        async function saveStats(wins, losses, total) {
+            const user = auth.currentUser;
+            if (!user) return;
+            try {
+                await db.collection('users').doc(user.uid).update({
+                    wins: wins,
+                    losses: losses,
+                    total: total,
+                    lastPlayed: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            } catch (e) {
+                console.log('Error saving stats:', e);
+            }
+        }
+
         // ==================== GAME LOGIC ====================
         const SUITS = ['♥️', '♦️', '♣️', '♠️'];
         const CARD_NAMES = { 1: 'A', 11: 'J', 12: 'Q', 13: 'K' };
 
-        function getCardName(value) {
-            return CARD_NAMES[value] || value.toString();
-        }
-
-        function getCardDisplay(value, suit) {
-            return `${getCardName(value)}${suit}`;
-        }
-
-        // State
         let deck = [];
         let jokerCard = null;
         let andarPile = [];
@@ -334,6 +591,14 @@
         let losses = 0;
         let total = 0;
 
+        function getCardName(value) {
+            return CARD_NAMES[value] || value.toString();
+        }
+
+        function getCardDisplay(value, suit) {
+            return `${getCardName(value)}${suit}`;
+        }
+
         function createDeck() {
             deck = [];
             for (let value = 1; value <= 13; value++) {
@@ -341,7 +606,6 @@
                     deck.push({ value, suit });
                 }
             }
-            // Fisher-Yates shuffle
             for (let i = deck.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
                 [deck[i], deck[j]] = [deck[j], deck[i]];
@@ -380,26 +644,20 @@
         function addCardToPile(pileName, card, isMatch = false) {
             const pileArray = pileName === 'Andar' ? andarPile : baharPile;
             pileArray.push(card);
-
             const containerId = pileName === 'Andar' ? 'andarCards' : 'baharCards';
             const container = document.getElementById(containerId);
-
             const cardEl = document.createElement('span');
             cardEl.className = 'mini-card' + (isMatch ? ' match' : '');
             cardEl.textContent = getCardDisplay(card.value, card.suit);
             container.appendChild(cardEl);
-
-            // Scroll to show new card
             cardEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
 
         function dealCard(turn) {
             if (deck.length === 0) return false;
-
             const card = deck.pop();
             const isMatch = (card.value === jokerCard.value);
             addCardToPile(turn, card, isMatch);
-
             if (isMatch) {
                 winner = turn;
                 gameOver = true;
@@ -409,7 +667,6 @@
         }
 
         function endGame() {
-            // Highlight
             document.getElementById('andarPile').classList.remove('winner', 'loser');
             document.getElementById('baharPile').classList.remove('winner', 'loser');
 
@@ -424,13 +681,12 @@
             document.getElementById('betSection').classList.add('hidden');
             document.getElementById('resetBtn').classList.remove('hidden');
 
-            // Result
             total++;
             const resultDiv = document.getElementById('resultDisplay');
+
             if (winner === playerBet) {
                 wins++;
                 resultDiv.innerHTML = '<div class="result win">🎉 BADHAI HO! AAP JEET GAYE! 🎊</div>';
-                // Haptic feedback
                 if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
             } else {
                 losses++;
@@ -438,12 +694,14 @@
                 if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('error');
             }
 
-            // Update score
             document.getElementById('wins').textContent = wins;
             document.getElementById('losses').textContent = losses;
             document.getElementById('total').textContent = total;
 
-            // Send score to Telegram
+            // Save to Firestore
+            saveStats(wins, losses, total);
+
+            // Send to Telegram
             tg.sendData(JSON.stringify({
                 wins: wins,
                 losses: losses,
@@ -454,14 +712,10 @@
 
         function placeBet(bet) {
             if (gameOver) return;
-
             playerBet = bet;
             document.getElementById('betSection').classList.add('hidden');
             document.getElementById('status').textContent = `🟢 Aapne "${bet}" choose kiya! Dealing...`;
-
             if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
-
-            // Start dealing - Andar first
             dealCards();
         }
 
@@ -472,22 +726,17 @@
                     clearInterval(dealInterval);
                     return;
                 }
-
                 const matched = dealCard(turn);
                 if (matched) {
                     endGame();
                     clearInterval(dealInterval);
                     return;
                 }
-
                 turn = (turn === 'Andar') ? 'Bahar' : 'Andar';
             }, 350);
         }
 
-        // Initialize
-        resetGame();
-
-        // Back button handler
+        // Back button
         tg.BackButton.onClick(() => {
             tg.close();
         });
